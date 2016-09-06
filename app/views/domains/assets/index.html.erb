@@ -1,1 +1,17 @@
-<%= @assets_per_page.to_json %>
+<html>
+  <body>
+    <% @pages_map.each do |page, assets| %>
+      <table style="border: 1px solid black">
+        <th><%= page %></th>
+        <% assets.each do |asset| %>
+          <tr>
+            <td style="border-top: 1px solid black">
+              <%= asset %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+      </br>
+    <% end %>
+  </body>
+</html>

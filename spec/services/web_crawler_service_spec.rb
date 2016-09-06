@@ -156,16 +156,4 @@ RSpec.describe WebCrawlerService do
       expect(subject).not_to include link1
     end
   end
-
-  # context 'with invalid schema' do
-  #   let(:link1) { 'mailto:foo@mail.com' }
-  #
-  #   before {
-  #     allow(faraday).to receive(:get).and_call_original
-  #   }
-  #   it 'never visits it' do
-  #     expect(faraday).not_to receive(:get).with(link1)
-  #     expect(subject).not_to include link1
-  #   end
-  # end
 end
