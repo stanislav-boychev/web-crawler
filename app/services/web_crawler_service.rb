@@ -1,47 +1,58 @@
 class WebCrawlerService
   def call(url)
-    visited_pages = Hash.new { |k, v| k[v] = Array.new }
-    get_pages(url, '/', visited_pages, 30)
+    crawl_pages(url: url,
+                path: '/',
+                pages_map: PagesMap.new,
+                recursion_limit: 30)
   end
 
   private
 
-  def get_pages(url, path, visited_pages, depth_count)
-    return {} if depth_count == 0
-    return {} if visited_pages.keys.include? path
-    return {} if URI.parse(path).host != URI.parse(url).host
-    # return {} if URI.parse(path).scheme.in? %w(tel mailto)
+  def crawl_pages(url:, path:, pages_map:, recursion_limit:)
+    return {} if recursion_limit.zero? || different_domain?(url, path)
 
-    puts "in get_pages: #{path}. depth: #{depth_count}" if Rails.env.development?
+    puts "in crawl_pages: #{path}. depth: #{recursion_limit}" if Rails.env.development?
     response = client(url).get(path)
 
-    return {} unless response.success?
-
-    content_type = response.headers['Content-Type']
-    if !content_type || content_type.exclude?('text/html')
-      return {}
-    end
+    return {} if !response.success? || !html_content?(response)
 
     html = Nokogiri::HTML(response.body)
-    static_assets = html.css('[src]').map do |a|
-      a['src']
+
+    pages_map[path] += collect_assets(html)
+
+    new_pages_map = collect_links(html).reduce(pages_map) do |pages, link|
+      next pages if pages.page_visited?(link)
+      pages.merge crawl_pages(url: url,
+                              path: link,
+                              pages_map: pages_map,
+                              recursion_limit: recursion_limit - 1)
     end
 
-    visited_pages[path] += static_assets
-    paths = html.css('a').map do |l|
+    new_pages_map.to_h
+  end
+
+  def collect_links(html)
+    html.css('a').map do |l|
       l["href"]
     end.compact
+  end
 
-    unvisited_paths = paths.select do |l|
-      visited_pages.keys.exclude? l
+  def html_content?(response)
+    content_type = response.headers['Content-Type']
+    content_type && content_type.include?('text/html')
+  end
+
+  def collect_assets(html)
+    html.css('[src]').map do |a|
+      a['src']
     end
+  end
 
-    unvisited_paths.reduce(visited_pages) do |pages, next_path|
-      pages.merge get_pages(url, next_path, visited_pages, depth_count - 1)
-    end.to_h
+  def different_domain?(url, path)
+    URI.parse(path).host != URI.parse(url).host
   end
 
   def client(url)
-    Faraday.new(url: "https://#{url}")
+    Faraday.new url: URI::HTTPS.build(host: url).to_s
   end
 end
