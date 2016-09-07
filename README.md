@@ -28,9 +28,11 @@ _Example for gocardless.com domain:_ `http://localhost:3000/domains/gocardless.c
 ## Architecture
 
 * The WebCrawlerService uses combination recursion and iteration to collect all the
-links on page and the visit them. This is the most intuitive approach. A better aproach can be trying replace recursion altogether with iteration. Although this will decrease the readability of the code it might increase performance
+links on page and the visit them. This is the most intuitive approach. A better approach can be trying replace recursion altogether with iteration. Although this will decrease the readability of the code it might increase performance. Alternatively we can try to leverage Ruby's TCO.
 
-* Implementing PagesMap object that can be used efficiently without creating a new instance on every call can lead to better architectural design and increase maintability and readability. PagesMap will behave like a hash but will have additional behaviour like checking if a page has been visited. In that way reponsibilities can be offloaded from WebCrawlerService
+* Leveraging Ruby's TCO will help removing `recursion_limit` in `crawl_pages` method.
+
+* Implementing PagesMap object that can be used efficiently without creating a new instance on every call can lead to better architectural design and increase maintainability and readability. PagesMap will behave like a hash but will have additional behaviour like checking if a page has been visited. In that way responsibilities can be offloaded from WebCrawlerService
 
 ## Performance
 
